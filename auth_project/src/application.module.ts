@@ -14,8 +14,5 @@ import { AuthModule } from "./application/controllers/auth/auth.module";
         UserModule, 
         ProductModule,
     ],
-    // controllers: [],
-    // providers: [],
-    // exports: []
 })
 export class ApplicationModule {}
