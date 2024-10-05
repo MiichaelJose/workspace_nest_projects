@@ -6,36 +6,54 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConstants } from 'src/application/controllers/auth/constantes';
 import { Request } from 'express';
-  
+import { Reflector } from '@nestjs/core';
+import { jwtConstants } from './jwt-constants';
+import { IS_PUBLIC_KEY, ROLES_KEY } from 'src/domain/decorators/roles.decorators';
+import { Role } from 'src/domain/enums/role.enum';
+//Os guards sao executados depois de todos os middlewares
 //proteger endpoints exigindo que um JWT válido esteja presente na solicitação. 
 //Faremos isso criando um AuthGuardque podemos usar para proteger nossas rotas.
-
 @Injectable()
 export class AuthGuard implements CanActivate {
-    constructor(private jwtService: JwtService) {}
+    constructor(private jwtService: JwtService, private reflector: Reflector) {}
   
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
-        if (!token) {
-            throw new UnauthorizedException();
+        // SKIP AUTH
+        const isSkipAuth = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()])
+        if(isSkipAuth) {
+            return true;
         }
+
+        const token = this.extractTokenFromHeader(request);
+
+        if (!token) {
+            throw new UnauthorizedException();//https://docs.nestjs.com/exception-filters trabalhar com exceptions
+        }
+
         try {
             const payload = await this.jwtService.verifyAsync(
-            token,
-            {
-                secret: jwtConstants.secret
-            }
+                token,
+                {secret: jwtConstants.secret}
             );
-            // 💡 We're assigning the payload to the request object here
-            // so that we can access it in our route handlers
             request['user'] = payload;
         } catch {
             throw new UnauthorizedException();
         }
-        return true;
+
+        const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [context.getHandler(), context.getClass()]);
+        if (!requiredRoles) {
+            return true;
+        }
+
+        const { user } = request
+
+        if(user) {
+            return requiredRoles.some((role) => user.role?.includes(role));
+        }
+        
+        return true
     }
   
     private extractTokenFromHeader(request: Request): string | undefined {

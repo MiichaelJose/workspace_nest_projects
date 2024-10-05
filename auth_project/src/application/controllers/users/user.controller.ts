@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { UserService } from 'src/application/services/user.service';
-import { AuthGuard } from 'src/infrastructure/guard/auth.guard';
+import { Roles } from 'src/domain/decorators/roles.decorators';
+import { Role } from 'src/domain/enums/role.enum';
 import { CreateUserDTO } from 'src/interfaces/dto/create-user.dto';
 import { QueryUserDTO } from 'src/interfaces/dto/query-user.dto';
 import { UpdateUserDTO } from 'src/interfaces/dto/update-user.dto';
@@ -14,7 +15,6 @@ export class UserController {
     return await this.userService.create(createUserDTO);
   }
 
-  @UseGuards(AuthGuard)
   @Get()
   async findAll(@Query() query: QueryUserDTO) {
     const users = await this.userService.findAll(query);
@@ -36,6 +36,7 @@ export class UserController {
     return `user #${id} alt name ${updateUserDTO.name}`;
   }
 
+  @Roles(Role.ADMIN)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return `user ${id} deleted`;

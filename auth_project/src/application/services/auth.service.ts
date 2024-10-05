@@ -1,7 +1,9 @@
 //https://docs.nestjs.com/security/authentication
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Get, Injectable, Request, UnauthorizedException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtService } from '@nestjs/jwt';
+import { CreateUserDTO } from 'src/interfaces/dto/create-user.dto';
+import { SkipAuth } from 'src/domain/decorators/roles.decorators';
 
 @Injectable()
 export class AuthService {
@@ -10,16 +12,22 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
+  @SkipAuth()
   async signIn(email: string, pass: string): Promise<any> {
-    const user = await this.userService.findOneByEmail(email);
+    const user = await this.userService.findOneByEmail(email) as CreateUserDTO;
     if (user?.password !== pass) {
       throw new UnauthorizedException();
     }
     
-    const payload = { sub: user.userId, username: user.username };
+    const payload = { sub: user._id, username: user.name, role: user.role };
 
     return {
       access_token: await this.jwtService.signAsync(payload)
     };
+  }
+
+  @Get("profile")
+  async isProfile(@Request() req) {
+    return req.user
   }
 }

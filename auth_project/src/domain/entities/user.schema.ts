@@ -24,6 +24,12 @@ export class User {
   password: string;
 
   @Prop({
+    type: String,
+    required: true
+  })
+  role: string;
+
+  @Prop({
     type: Date,
     default: new Date()
   })
