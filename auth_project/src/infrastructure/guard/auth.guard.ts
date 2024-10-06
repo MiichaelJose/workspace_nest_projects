@@ -18,16 +18,21 @@ import { Role } from 'src/domain/enums/role.enum';
 export class AuthGuard implements CanActivate {
     constructor(private jwtService: JwtService, private reflector: Reflector) {}
   
+    //https://docs.nestjs.com/fundamentals/execution-context
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        const varContext = [context.getHandler(), context.getClass()]
+        // constexto HTPP
         const request = context.switchToHttp().getRequest();
-        // SKIP AUTH
-        const isSkipAuth = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()])
+        const { user } = request
+
+        // SKIP AUTH no contexto UserController, funcao (sigin...)
+        const isSkipAuth = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, varContext)
+
         if(isSkipAuth) {
             return true;
         }
 
         const token = this.extractTokenFromHeader(request);
-
         if (!token) {
             throw new UnauthorizedException();//https://docs.nestjs.com/exception-filters trabalhar com exceptions
         }
@@ -41,18 +46,14 @@ export class AuthGuard implements CanActivate {
         } catch {
             throw new UnauthorizedException();
         }
-
-        const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [context.getHandler(), context.getClass()]);
-        if (!requiredRoles) {
-            return true;
-        }
-
-        const { user } = request
-
-        if(user) {
-            return requiredRoles.some((role) => user.role?.includes(role));
-        }
+        // VERIFICA o contexto UserController e funcao (create, delete...) que necessita da role 
+        const handlesRequiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, varContext);
+        const checkRoleUser = Array.isArray(handlesRequiredRoles)
         
+        if(checkRoleUser) {
+            return handlesRequiredRoles.some((role) => user.role?.includes(role))
+        }
+
         return true
     }
   
