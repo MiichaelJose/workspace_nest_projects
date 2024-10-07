@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/infrastructure/guard/jwt-constants';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from 'src/infrastructure/guard/auth.guard';
+import { GoogleStrategy } from './google-strategy';
 
 @Module({
     imports: [
@@ -16,7 +17,7 @@ import { AuthGuard } from 'src/infrastructure/guard/auth.guard';
             secret: jwtConstants.secret,
             signOptions: { expiresIn: '999s' },
         }),
-         
+        //PassportModule.register({ session: false })
     ],
     controllers: [AuthController],
     providers: [
@@ -25,7 +26,8 @@ import { AuthGuard } from 'src/infrastructure/guard/auth.guard';
         {
             provide: APP_GUARD,
             useClass: AuthGuard
-        }
+        },
+        GoogleStrategy
     ],
 })
 export class AuthModule {}

@@ -4,6 +4,7 @@ import { UserService } from './user.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDTO } from 'src/interfaces/dto/create-user.dto';
 import { SkipAuth } from 'src/domain/decorators/roles.decorators';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,10 @@ export class AuthService {
   @SkipAuth()
   async signIn(email: string, pass: string): Promise<any> {
     const user = await this.userService.findOneByEmail(email) as CreateUserDTO;
-    if (user?.password !== pass) {
+
+    const isMatch = await bcrypt.compare(pass, user.password);
+    
+    if (!isMatch) {
       throw new UnauthorizedException();
     }
     

@@ -12,7 +12,8 @@ export class UserRepository implements IUserRepository {
 
   async create(createUserDTO: CreateUserDTO): Promise<User> {
     const createdUser = new this.userModel(createUserDTO);
-    return await createdUser.save();
+    const saveUser = await createdUser.save()
+    return saveUser.toObject(); // objeto plain, objeto js para o serializer
   }
 
   async findAll(query: QueryUserDTO): Promise<User[]> {

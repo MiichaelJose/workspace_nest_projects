@@ -5,16 +5,16 @@ import { Role } from 'src/domain/enums/role.enum';
 import { CreateUserDTO } from 'src/interfaces/dto/create-user.dto';
 import { QueryUserDTO } from 'src/interfaces/dto/query-user.dto';
 import { UpdateUserDTO } from 'src/interfaces/dto/update-user.dto';
-import { UserResponseDTO } from 'src/interfaces/serializers/user-response.dto';
+import { ResponseUserDTO } from 'src/interfaces/serializers/response-user.dto';
 
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)  //aplicando as transformações especificadas, como ocultar
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @UseInterceptors(ClassSerializerInterceptor)
+  
   @Post()
   async create(@Body() createUserDTO: CreateUserDTO) {
-    return new UserResponseDTO(await this.userService.create(createUserDTO));
+    return new ResponseUserDTO(await this.userService.create(createUserDTO));
   }
 
   @Get()
